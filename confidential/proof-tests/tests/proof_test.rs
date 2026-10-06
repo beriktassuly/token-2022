@@ -5,8 +5,9 @@ use {
         zk_elgamal_proof_program::VerifyZkProof,
     },
     spl_token_confidential_transfer_proof_extraction::{
-        burn::BurnProofContext, mint::MintProofContext, transfer::TransferProofContext,
-        transfer_with_fee::TransferWithFeeProofContext, withdraw::WithdrawProofContext,
+        burn::BurnProofContext, errors::TokenProofExtractionError, mint::MintProofContext,
+        transfer::TransferProofContext, transfer_with_fee::TransferWithFeeProofContext,
+        withdraw::WithdrawProofContext,
     },
     spl_token_confidential_transfer_proof_generation::{
         burn::{burn_split_proof_data, BurnProofData},
@@ -157,6 +158,21 @@ fn test_transfer_with_fee_proof_validity(
         maximum_fee,
     )
     .unwrap();
+
+    assert!(matches!(
+        TransferWithFeeProofContext::verify_and_extract(
+            equality_proof_data.context_data(),
+            transfer_amount_ciphertext_validity_proof_data_with_ciphertext
+                .proof_data
+                .context_data(),
+            percentage_with_cap_proof_data.context_data(),
+            fee_ciphertext_validity_proof_data.context_data(),
+            range_proof_data.context_data(),
+            fee_rate_basis_points.checked_add(1).unwrap(),
+            maximum_fee,
+        ),
+        Err(TokenProofExtractionError::FeeParametersMismatch)
+    ));
 }
 
 #[test]
